@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Sanayi Yedek Parça{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Özet Kartları -->
+    <div class="stats-grid">
+        <div class="stat-card stat-blue">
+            <div class="stat-icon"><i class="fas fa-puzzle-piece"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ ozet.get('toplam_parca', 0) }}</span>
+                <span class="stat-label">Toplam Parça</span>
+            </div>
+        </div>
+        <div class="stat-card stat-purple">
+            <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ ozet.get('toplam_kategori', 0) }}</span>
+                <span class="stat-label">Kategori</span>
+            </div>
+        </div>
+        <div class="stat-card stat-green">
+            <div class="stat-icon"><i class="fas fa-truck"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ ozet.get('toplam_tedarikci', 0) }}</span>
+                <span class="stat-label">Tedarikçi</span>
+            </div>
+        </div>
+        <div class="stat-card stat-orange">
+            <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ ozet.get('toplam_hareket', 0) }}</span>
+                <span class="stat-label">Stok Hareketi</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- İkinci Satır -->
+    <div class="stats-grid stats-grid-2">
+        <div class="stat-card stat-cyan">
+            <div class="stat-icon"><i class="fas fa-lira-sign"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ "{:,.0f}".format(ozet.get('toplam_stok_degeri', 0)) }} ₺</span>
+                <span class="stat-label">Toplam Stok Değeri</span>
+            </div>
+        </div>
+        <div class="stat-card stat-red">
+            <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ ozet.get('dusuk_stoklu', 0) }}</span>
+                <span class="stat-label">Düşük Stoklu Parça</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son Hareketler Tablosu -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-clock"></i> Son Stok Hareketleri</h2>
+            <a href="{{ url_for('stok') }}" class="btn btn-sm btn-outline">Tümünü Gör</a>
+        </div>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Parça</th>
+                        <th>Kod</th>
+                        <th>Tip</th>
+                        <th>Miktar</th>
+                        <th>Tarih</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in ozet.get('son_hareketler', []) %}
+                    <tr>
+                        <td>{{ h['parca_adi'] or '-' }}</td>
+                        <td><code>{{ h['parca_kodu'] or '-' }}</code></td>
+                        <td>
+                            <span class="badge {% if h['hareket_tipi'] == 'giris' %}badge-success{% else %}badge-danger{% endif %}">
+                                {% if h['hareket_tipi'] == 'giris' %}▲ Giriş{% else %}▼ Çıkış{% endif %}
+                            </span>
+                        </td>
+                        <td><strong>{{ h['miktar'] }}</strong></td>
+                        <td>{{ h['tarih'] }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center">Henüz hareket yok.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

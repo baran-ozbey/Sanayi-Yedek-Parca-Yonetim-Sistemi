@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Stok Hareketleri — Sanayi Yedek Parça{% endblock %}
+{% block page_title %}Stok Hareketleri{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <button class="btn btn-primary" onclick="openAddStokModal()">
+        <i class="fas fa-plus"></i> Yeni Stok Hareketi
+    </button>
+</div>
+
+<!-- Filtre -->
+<div class="card filter-card">
+    <form method="GET" action="{{ url_for('stok') }}" class="filter-form">
+        <div class="form-group">
+            <select name="parca_no" class="form-control">
+                <option value="">Tüm Parçalar</option>
+                {% for p in parcalar %}
+                <option value="{{ p['no'] }}" {% if secili_parca == p['no'] %}selected{% endif %}>{{ p['ad'] }} ({{ p['parca_kodu'] }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrele</button>
+        <a href="{{ url_for('stok') }}" class="btn btn-outline">Temizle</a>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-exchange-alt"></i> Hareket Listesi ({{ hareketler|length }})</h2>
+    </div>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>NO</th>
+                    <th>Parça</th>
+                    <th>Kod</th>
+                    <th>Tip</th>
+                    <th>Miktar</th>
+                    <th>Tarih</th>
+                    <th>Açıklama</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in hareketler %}
+                <tr>
+                    <td>{{ h['no'] }}</td>
+                    <td><strong>{{ h['parca_adi'] or '-' }}</strong></td>
+                    <td><code>{{ h['parca_kodu'] or '-' }}</code></td>
+                    <td>
+                        <span class="badge {% if h['hareket_tipi'] == 'giris' %}badge-success{% else %}badge-danger{% endif %}">
+                            {% if h['hareket_tipi'] == 'giris' %}▲ Giriş{% else %}▼ Çıkış{% endif %}
+                        </span>
+                    </td>
+                    <td><strong>{{ h['miktar'] }}</strong></td>
+                    <td>{{ h['tarih'] }}</td>
+                    <td>{{ h['aciklama'] or '-' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('stok_sil', hno=h['no']) }}" style="display:inline" onsubmit="return confirm('Bu hareketi silmek ve stoku geri almak istediğinize emin misiniz?')">
+                            <button type="submit" class="btn btn-sm btn-delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center">Kayıt bulunamadı.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<template id="stokAddFormTemplate">
+    <form method="POST" action="{{ url_for('stok_ekle') }}" class="modal-form">
+        <div class="form-group">
+            <label>Parça *</label>
+            <select name="parca_no" required class="form-control">
+                <option value="">Parça seçiniz</option>
+                {% for p in parcalar %}
+                <option value="{{ p['no'] }}">{{ p['ad'] }} ({{ p['parca_kodu'] }}) — Stok: {{ p['stok_miktari'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Hareket Tipi *</label>
+                <select name="hareket_tipi" required class="form-control">
+                    <option value="giris">▲ Giriş (Stok Artış)</option>
+                    <option value="cikis">▼ Çıkış (Stok Azalış)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Miktar *</label>
+                <input type="number" name="miktar" min="1" required class="form-control" placeholder="Adet">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Açıklama</label>
+            <textarea name="aciklama" class="form-control" rows="2" placeholder="Hareket açıklaması..."></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Kaydet</button>
+            <button type="button" class="btn btn-outline" onclick="closeModal()">İptal</button>
+        </div>
+    </form>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAddStokModal() {
+    const content = document.getElementById('stokAddFormTemplate').content.cloneNode(true);
+    openModal('Yeni Stok Hareketi', content);
+}
+</script>
+{% endblock %}

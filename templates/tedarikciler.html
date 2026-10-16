@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Tedarikçiler — Sanayi Yedek Parça{% endblock %}
+{% block page_title %}Tedarikçi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <button class="btn btn-primary" onclick="openAddTedarikciModal()">
+        <i class="fas fa-plus"></i> Yeni Tedarikçi Ekle
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-truck"></i> Tedarikçi Listesi ({{ tedarikciler|length }})</h2>
+    </div>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>NO</th>
+                    <th>Firma Adı</th>
+                    <th>Telefon</th>
+                    <th>E-posta</th>
+                    <th>Adres</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tedarikciler %}
+                <tr>
+                    <td>{{ t['no'] }}</td>
+                    <td><strong>{{ t['ad'] }}</strong></td>
+                    <td><i class="fas fa-phone"></i> {{ t['telefon'] or '-' }}</td>
+                    <td><i class="fas fa-envelope"></i> {{ t['eposta'] or '-' }}</td>
+                    <td>{{ t['adres'] or '-' }}</td>
+                    <td class="action-cell">
+                        <button class="btn btn-sm btn-edit" onclick="openEditTedarikciModal({{ t['no'] }}, '{{ t['ad'] }}', '{{ t['telefon'] or '' }}', '{{ t['eposta'] or '' }}', '{{ t['adres'] or '' }}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('tedarikci_sil', tno=t['no']) }}" style="display:inline" onsubmit="return confirm('Silmek istediğinize emin misiniz?')">
+                            <button type="submit" class="btn btn-sm btn-delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center">Kayıt bulunamadı.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<template id="tedarikciAddFormTemplate">
+    <form method="POST" action="{{ url_for('tedarikci_ekle') }}" class="modal-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Firma Adı *</label>
+                <input type="text" name="ad" required class="form-control" placeholder="Ör: Bosch Türkiye">
+            </div>
+            <div class="form-group">
+                <label>Telefon</label>
+                <input type="text" name="telefon" class="form-control" placeholder="Ör: 0212-555-0001">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>E-posta *</label>
+                <input type="email" name="eposta" required class="form-control" placeholder="Ör: info@firma.com">
+            </div>
+            <div class="form-group">
+                <label>Adres</label>
+                <input type="text" name="adres" class="form-control" placeholder="Ör: İstanbul, Türkiye">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Kaydet</button>
+            <button type="button" class="btn btn-outline" onclick="closeModal()">İptal</button>
+        </div>
+    </form>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAddTedarikciModal() {
+    const content = document.getElementById('tedarikciAddFormTemplate').content.cloneNode(true);
+    openModal('Yeni Tedarikçi Ekle', content);
+}
+function openEditTedarikciModal(no, ad, tel, eposta, adres) {
+    const formHtml = `
+        <form method="POST" action="/tedarikciler/guncelle/${no}" class="modal-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Firma Adı *</label>
+                    <input type="text" name="ad" value="${ad}" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Telefon</label>
+                    <input type="text" name="telefon" value="${tel}" class="form-control">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>E-posta *</label>
+                    <input type="email" name="eposta" value="${eposta}" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Adres</label>
+                    <input type="text" name="adres" value="${adres}" class="form-control">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Güncelle</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal()">İptal</button>
+            </div>
+        </form>`;
+    openModal('Tedarikçi Düzenle', formHtml);
+}
+</script>
+{% endblock %}

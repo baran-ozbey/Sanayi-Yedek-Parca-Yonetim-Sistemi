@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Parçalar — Sanayi Yedek Parça{% endblock %}
+{% block page_title %}Parça Yönetimi{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <button class="btn btn-primary" onclick="openAddParcaModal()">
+        <i class="fas fa-plus"></i> Yeni Parça Ekle
+    </button>
+    <a href="{{ url_for('csv_parcalar') }}" class="btn btn-outline">
+        <i class="fas fa-file-csv"></i> CSV İndir
+    </a>
+</div>
+
+<!-- Arama ve Filtre -->
+<div class="card filter-card">
+    <form method="GET" action="{{ url_for('parcalar') }}" class="filter-form">
+        <div class="form-group">
+            <input type="text" name="arama" placeholder="Parça adı veya kodu ara..." value="{{ arama }}" class="form-control">
+        </div>
+        <div class="form-group">
+            <select name="kategori_no" class="form-control">
+                <option value="">Tüm Kategoriler</option>
+                {% for k in kategoriler %}
+                <option value="{{ k['no'] }}" {% if secili_kategori == k['no'] %}selected{% endif %}>{{ k['ad'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Ara</button>
+        <a href="{{ url_for('parcalar') }}" class="btn btn-outline">Temizle</a>
+    </form>
+</div>
+
+<!-- Parça Tablosu -->
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-puzzle-piece"></i> Parça Listesi ({{ parcalar|length }})</h2>
+    </div>
+    <div class="table-wrapper">
+        <table class="table" id="parcaTable">
+            <thead>
+                <tr>
+                    <th>NO</th>
+                    <th>Parça Adı</th>
+                    <th>Kod</th>
+                    <th>Kategori</th>
+                    <th>Tedarikçi</th>
+                    <th>Fiyat</th>
+                    <th>Stok</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in parcalar %}
+                <tr>
+                    <td>{{ p['no'] }}</td>
+                    <td><strong>{{ p['ad'] }}</strong></td>
+                    <td><code>{{ p['parca_kodu'] }}</code></td>
+                    <td><span class="badge badge-info">{{ p['kategori_adi'] or '-' }}</span></td>
+                    <td>{{ p['tedarikci_adi'] or '-' }}</td>
+                    <td>{{ "{:,.2f}".format(p['fiyat']) }} ₺</td>
+                    <td>
+                        <span class="badge {% if p['stok_miktari'] < 10 %}badge-danger{% elif p['stok_miktari'] < 30 %}badge-warning{% else %}badge-success{% endif %}">
+                            {{ p['stok_miktari'] }}
+                        </span>
+                    </td>
+                    <td class="action-cell">
+                        <button class="btn btn-sm btn-edit" onclick="openEditParcaModal({{ p['no'] }}, '{{ p['ad'] }}', '{{ p['parca_kodu'] }}', {{ p['kategori_no'] }}, {{ p['tedarikci_no'] }}, {{ p['fiyat'] }}, {{ p['stok_miktari'] }}, '{{ p['aciklama'] or '' }}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('parca_sil', pno=p['no']) }}" style="display:inline" onsubmit="return confirm('Bu parçayı silmek istediğinize emin misiniz?')">
+                            <button type="submit" class="btn btn-sm btn-delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center">Kayıt bulunamadı.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Parça Ekleme Formu (gizli, modal ile gösterilir) -->
+<template id="parcaAddFormTemplate">
+    <form method="POST" action="{{ url_for('parca_ekle') }}" class="modal-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Parça Adı *</label>
+                <input type="text" name="ad" required class="form-control" placeholder="Ör: Bilyalı Rulman">
+            </div>
+            <div class="form-group">
+                <label>Parça Kodu *</label>
+                <input type="text" name="parca_kodu" required class="form-control" placeholder="Ör: RUL-BIL-002">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Kategori *</label>
+                <select name="kategori_no" required class="form-control">
+                    <option value="">Seçiniz</option>
+                    {% for k in kategoriler %}<option value="{{ k['no'] }}">{{ k['ad'] }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Tedarikçi *</label>
+                <select name="tedarikci_no" required class="form-control">
+                    <option value="">Seçiniz</option>
+                    {% for t in tedarikciler %}<option value="{{ t['no'] }}">{{ t['ad'] }}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Fiyat (₺) *</label>
+                <input type="number" name="fiyat" step="0.01" min="0" required class="form-control" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Stok Miktarı *</label>
+                <input type="number" name="stok_miktari" min="0" required class="form-control" placeholder="0">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Açıklama</label>
+            <textarea name="aciklama" class="form-control" rows="2" placeholder="Parça hakkında açıklama..."></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Kaydet</button>
+            <button type="button" class="btn btn-outline" onclick="closeModal()">İptal</button>
+        </div>
+    </form>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAddParcaModal() {
+    const content = document.getElementById('parcaAddFormTemplate').content.cloneNode(true);
+    openModal('Yeni Parça Ekle', content);
+}
+
+function openEditParcaModal(no, ad, kod, katNo, tedNo, fiyat, stok, aciklama) {
+    const formHtml = `
+        <form method="POST" action="/parcalar/guncelle/${no}" class="modal-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Parça Adı *</label>
+                    <input type="text" name="ad" value="${ad}" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Parça Kodu *</label>
+                    <input type="text" name="parca_kodu" value="${kod}" required class="form-control">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Kategori *</label>
+                    <select name="kategori_no" required class="form-control" id="editKat">
+                        {% for k in kategoriler %}<option value="{{ k['no'] }}">{{ k['ad'] }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tedarikçi *</label>
+                    <select name="tedarikci_no" required class="form-control" id="editTed">
+                        {% for t in tedarikciler %}<option value="{{ t['no'] }}">{{ t['ad'] }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Fiyat (₺) *</label>
+                    <input type="number" name="fiyat" value="${fiyat}" step="0.01" min="0" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Stok Miktarı *</label>
+                    <input type="number" name="stok_miktari" value="${stok}" min="0" required class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Açıklama</label>
+                <textarea name="aciklama" class="form-control" rows="2">${aciklama}</textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Güncelle</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal()">İptal</button>
+            </div>
+        </form>`;
+    openModal('Parça Düzenle', formHtml);
+    document.getElementById('editKat').value = katNo;
+    document.getElementById('editTed').value = tedNo;
+}
+</script>
+{% endblock %}

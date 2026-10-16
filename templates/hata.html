@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Hata {{ kod }} — Sanayi Yedek Parça{% endblock %}
+{% block page_title %}Hata{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-code">{{ kod }}</div>
+    <div class="error-message">{{ mesaj }}</div>
+    <a href="{{ url_for('ana_sayfa') }}" class="btn btn-primary">
+        <i class="fas fa-home"></i> Ana Sayfaya Dön
+    </a>
+</div>
+{% endblock %}

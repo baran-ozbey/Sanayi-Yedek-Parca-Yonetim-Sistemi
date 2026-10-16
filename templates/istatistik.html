@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}İstatistikler — Sanayi Yedek Parça{% endblock %}
+{% block page_title %}İstatistikler & Grafikler{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Numpy/Pandas Özet Kartları -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-calculator"></i> Sayısal Özet (Numpy / Pandas)</h2>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid stats-grid-4" id="istatistikOzet">
+                <div class="stat-card stat-blue"><div class="stat-info"><span class="stat-value" id="ozToplamParca">—</span><span class="stat-label">Toplam Parça</span></div></div>
+                <div class="stat-card stat-green"><div class="stat-info"><span class="stat-value" id="ozOrtFiyat">—</span><span class="stat-label">Ort. Fiyat (₺)</span></div></div>
+                <div class="stat-card stat-purple"><div class="stat-info"><span class="stat-value" id="ozToplamStok">—</span><span class="stat-label">Toplam Stok</span></div></div>
+                <div class="stat-card stat-orange"><div class="stat-info"><span class="stat-value" id="ozToplamDeger">—</span><span class="stat-label">Toplam Değer (₺)</span></div></div>
+                <div class="stat-card stat-cyan"><div class="stat-info"><span class="stat-value" id="ozMaxFiyat">—</span><span class="stat-label">Maks. Fiyat (₺)</span></div></div>
+                <div class="stat-card stat-red"><div class="stat-info"><span class="stat-value" id="ozMinFiyat">—</span><span class="stat-label">Min. Fiyat (₺)</span></div></div>
+                <div class="stat-card stat-blue"><div class="stat-info"><span class="stat-value" id="ozOrtStok">—</span><span class="stat-label">Ort. Stok</span></div></div>
+                <div class="stat-card stat-purple"><div class="stat-info"><span class="stat-value" id="ozStdFiyat">—</span><span class="stat-label">Fiyat Std. Sapma</span></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matplotlib Grafikleri -->
+    <div class="grafik-grid">
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-chart-bar"></i> Stok Değeri (En Yüksek 10)</h2></div>
+            <div class="card-body text-center">
+                <img src="/api/istatistik/grafik/stok_degeri" alt="Stok Değeri Grafiği" class="grafik-img" loading="lazy">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-chart-pie"></i> Kategori Dağılımı</h2></div>
+            <div class="card-body text-center">
+                <img src="/api/istatistik/grafik/kategori_dagilim" alt="Kategori Dağılımı" class="grafik-img" loading="lazy">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-chart-line"></i> Stok Hareket Trendi</h2></div>
+            <div class="card-body text-center">
+                <img src="/api/istatistik/grafik/hareket_trend" alt="Hareket Trendi" class="grafik-img" loading="lazy">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-chart-bar"></i> Tedarikçi Parça Sayısı</h2></div>
+            <div class="card-body text-center">
+                <img src="/api/istatistik/grafik/tedarikci_parca" alt="Tedarikçi Parça" class="grafik-img" loading="lazy">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Numpy/Pandas istatistik verilerini API'den çek
+fetch('/api/istatistik/ozet')
+    .then(r => r.json())
+    .then(d => {
+        if (d.hata) return;
+        document.getElementById('ozToplamParca').textContent = d.toplam_parca;
+        document.getElementById('ozOrtFiyat').textContent = d.ortalama_fiyat.toLocaleString('tr-TR');
+        document.getElementById('ozToplamStok').textContent = d.toplam_stok.toLocaleString('tr-TR');
+        document.getElementById('ozToplamDeger').textContent = d.toplam_deger.toLocaleString('tr-TR');
+        document.getElementById('ozMaxFiyat').textContent = d.max_fiyat.toLocaleString('tr-TR');
+        document.getElementById('ozMinFiyat').textContent = d.min_fiyat.toLocaleString('tr-TR');
+        document.getElementById('ozOrtStok').textContent = d.ortalama_stok.toLocaleString('tr-TR');
+        document.getElementById('ozStdFiyat').textContent = d.std_fiyat.toLocaleString('tr-TR');
+    })
+    .catch(e => console.error('İstatistik yükleme hatası:', e));
+</script>
+{% endblock %}

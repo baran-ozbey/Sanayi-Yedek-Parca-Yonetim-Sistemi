@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Kategoriler — Sanayi Yedek Parça{% endblock %}
+{% block page_title %}Kategori Yönetimi{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <button class="btn btn-primary" onclick="openAddKategoriModal()">
+        <i class="fas fa-plus"></i> Yeni Kategori Ekle
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-layer-group"></i> Kategori Listesi ({{ kategoriler|length }})</h2>
+    </div>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>NO</th>
+                    <th>Kategori Adı</th>
+                    <th>Üst Kategori</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for k in kategoriler %}
+                <tr>
+                    <td>{{ k['no'] }}</td>
+                    <td><strong>{{ k['ad'] }}</strong></td>
+                    <td>
+                        {% if k['ust_kategori_no'] %}
+                            {% for parent in kategoriler %}
+                                {% if parent['no'] == k['ust_kategori_no'] %}
+                                    <span class="badge badge-info">{{ parent['ad'] }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <span class="badge badge-muted">Ana Kategori</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-cell">
+                        <button class="btn btn-sm btn-edit" onclick="openEditKategoriModal({{ k['no'] }}, '{{ k['ad'] }}', {{ k['ust_kategori_no'] or 'null' }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('kategori_sil', kno=k['no']) }}" style="display:inline" onsubmit="return confirm('Silmek istediğinize emin misiniz?')">
+                            <button type="submit" class="btn btn-sm btn-delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center">Kayıt bulunamadı.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Kategori Ağacı Görünümü -->
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-sitemap"></i> Kategori Ağacı (Hiyerarşik)</h2>
+    </div>
+    <div class="card-body tree-view">
+        {% for item in agac %}
+        <div class="tree-item" style="padding-left: {{ item['seviye'] * 24 }}px;">
+            {% if item['seviye'] > 0 %}<i class="fas fa-level-up-alt fa-rotate-90 tree-icon"></i>{% else %}<i class="fas fa-folder tree-icon"></i>{% endif %}
+            <span>{{ item['ad_sade'] }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<template id="kategoriAddFormTemplate">
+    <form method="POST" action="{{ url_for('kategori_ekle') }}" class="modal-form">
+        <div class="form-group">
+            <label>Kategori Adı *</label>
+            <input type="text" name="ad" required class="form-control" placeholder="Ör: Hidrolik Sistem">
+        </div>
+        <div class="form-group">
+            <label>Üst Kategori (Opsiyonel)</label>
+            <select name="ust_kategori_no" class="form-control">
+                <option value="">Ana Kategori (Kök)</option>
+                {% for k in kategoriler %}<option value="{{ k['no'] }}">{{ k['ad'] }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Kaydet</button>
+            <button type="button" class="btn btn-outline" onclick="closeModal()">İptal</button>
+        </div>
+    </form>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAddKategoriModal() {
+    const content = document.getElementById('kategoriAddFormTemplate').content.cloneNode(true);
+    openModal('Yeni Kategori Ekle', content);
+}
+function openEditKategoriModal(no, ad, ustNo) {
+    const formHtml = `
+        <form method="POST" action="/kategoriler/guncelle/${no}" class="modal-form">
+            <div class="form-group">
+                <label>Kategori Adı *</label>
+                <input type="text" name="ad" value="${ad}" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Üst Kategori</label>
+                <select name="ust_kategori_no" class="form-control" id="editUstKat">
+                    <option value="">Ana Kategori (Kök)</option>
+                    {% for k in kategoriler %}<option value="{{ k['no'] }}">{{ k['ad'] }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Güncelle</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal()">İptal</button>
+            </div>
+        </form>`;
+    openModal('Kategori Düzenle', formHtml);
+    if (ustNo) document.getElementById('editUstKat').value = ustNo;
+}
+</script>
+{% endblock %}
